@@ -2,7 +2,10 @@ package hu.elte.fullstack.fullstack_programming_backend;
 
 import static hu.elte.fullstack.fullstack_programming_backend.auth.AuthorizationHeaders.parseBasicAuthorizationHeader;
 import static hu.elte.fullstack.fullstack_programming_backend.auth.AuthorizationHeaders.parseBearerAuthorizationHeader;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static hu.elte.fullstack.fullstack_programming_backend.auth.AuthorizationHeaders.validateAuthBasicHeader;
+import static hu.elte.fullstack.fullstack_programming_backend.auth.AuthorizationHeaders.validateAuthBearerHeader;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.ResponseEntity.status;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import hu.elte.fullstack.fullstack_programming_backend.auth.Credentials;
@@ -18,39 +21,50 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class LoginController {
 
-    private final JwtService jwtService;
+    public static final String AUTHORIZATION = "Authorization";
+    
     private final LoginService loginService;
+    private final JwtService jwtService;
 
-    public LoginController(JwtService jwtService, LoginService loginService) {
-        this.jwtService = jwtService;
+    public LoginController(LoginService loginService, JwtService jwtService) {
         this.loginService = loginService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<?> login(@RequestHeader(AUTHORIZATION) String authorizationHeader) {
+
+        if (validateAuthBasicHeader(authorizationHeader)) {
+            return status(UNAUTHORIZED).body("Missing or invalid Authorization header");
+        }
 
         Credentials credentials = parseBasicAuthorizationHeader(authorizationHeader);
 
         if (loginService.validateCredentials(credentials)) {
             String token = jwtService.createJwtToken(credentials.username());
             String base64EncodedToken = Base64.getEncoder().encodeToString(token.getBytes());
-            return ResponseEntity.ok().header("Set-Cookie", "access_token=" + base64EncodedToken).build();
+            return ResponseEntity.noContent().header("Set-Cookie", "access_token=" + base64EncodedToken).build();
         } else {
-            return ResponseEntity.status(FORBIDDEN).body("Invalid username or password");
+            return status(UNAUTHORIZED).body("Invalid username or password");
         }
     }
 
+
     @GetMapping("/protected")
-    public ResponseEntity<?> protectedEndpoint(@RequestHeader("Authorization") String authorizationHeader) {
-        DecodedJWT decodedJWT;
+    public ResponseEntity<?> protectedEndpoint(@RequestHeader(AUTHORIZATION) String authorizationHeader) {
+
+        if (validateAuthBearerHeader(authorizationHeader)) {
+            return status(UNAUTHORIZED).body("Missing or invalid Authorization header");
+        }
 
         try {
             String token = parseBearerAuthorizationHeader(authorizationHeader);
-            decodedJWT = jwtService.verifyAndDecodeToken(token);
+            DecodedJWT decodedJWT = jwtService.verifyAndDecodeToken(token);
+            return ResponseEntity.ok("Hello, " + decodedJWT.getSubject());
         } catch (Exception exception) {
-            return ResponseEntity.status(FORBIDDEN).body("This is a protected endpoint");
+            return status(UNAUTHORIZED).body("This is a protected endpoint");
         }
-
-        return ResponseEntity.ok("Hello, " + decodedJWT.getSubject());
     }
+
+
 }

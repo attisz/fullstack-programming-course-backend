@@ -26,4 +26,12 @@ public final class AuthorizationHeaders {
         byte[] jwtToken = Base64.getDecoder().decode(bearerToken);
         return new String(jwtToken);
     }
+
+    public static boolean validateAuthBearerHeader(String authorizationHeader) {
+        return authorizationHeader == null || !authorizationHeader.startsWith(AUTHORIZATION_HEADER_BEARER);
+    }
+
+    public static boolean validateAuthBasicHeader(String authorizationHeader) {
+        return authorizationHeader == null || !authorizationHeader.startsWith(AUTHORIZATION_HEADER_BASIC);
+    }
 }

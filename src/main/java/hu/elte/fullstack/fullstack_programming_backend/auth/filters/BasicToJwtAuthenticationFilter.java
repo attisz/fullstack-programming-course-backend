@@ -1,5 +1,8 @@
-package hu.elte.fullstack.fullstack_programming_backend.auth;
+package hu.elte.fullstack.fullstack_programming_backend.auth.filters;
 
+import static org.springframework.http.HttpHeaders.SET_COOKIE;
+
+import hu.elte.fullstack.fullstack_programming_backend.auth.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,12 +13,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolderStrategy;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-@Component
 public class BasicToJwtAuthenticationFilter extends OncePerRequestFilter {
 
+    public static final String ACCESS_TOKEN_COOKIE = "access_token";
     private final SecurityContextHolderStrategy securityContextHolderStrategy = SecurityContextHolder
             .getContextHolderStrategy();
 
@@ -31,7 +33,7 @@ public class BasicToJwtAuthenticationFilter extends OncePerRequestFilter {
         Authentication authentication = securityContext.getAuthentication();
 
         if (authentication != null && authentication.isAuthenticated() && authentication instanceof UsernamePasswordAuthenticationToken) {
-            response.addHeader("Authorization", "Bearer " + jwtService.createJwtToken(authentication.getName()));
+            response.addHeader(SET_COOKIE, ACCESS_TOKEN_COOKIE + "=" + jwtService.createJwtToken(authentication.getName()));
         }
 
         filterChain.doFilter(request, response);

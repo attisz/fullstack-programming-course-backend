@@ -1,10 +1,14 @@
-package hu.elte.fullstack.fullstack_programming_backend;
+package hu.elte.fullstack.fullstack_programming_backend.api;
 
+import static org.springframework.http.HttpHeaders.SET_COOKIE;
 import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.ok;
 
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +25,9 @@ public class ExampleController {
     }
 
     @PostMapping("/login")
-    @ApiResponse(responseCode = "204")
+    @SecurityRequirement(name = "basicAuth")
+    @ApiResponse(responseCode = "204",
+            headers = @Header(name = SET_COOKIE, examples = @ExampleObject("access_token=<base64_encoded_jwt_token>")))
     @ApiResponse(responseCode = "401")
     public ResponseEntity<?> loginEndpoint() {
         return noContent().build();

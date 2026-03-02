@@ -2,13 +2,15 @@ package hu.elte.fullstack.fullstack_programming_backend;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
-import hu.elte.fullstack.fullstack_programming_backend.auth.BasicToJwtAuthenticationFilter;
-import hu.elte.fullstack.fullstack_programming_backend.auth.JwtPreAuthFilter;
 import hu.elte.fullstack.fullstack_programming_backend.auth.JwtService;
+import hu.elte.fullstack.fullstack_programming_backend.auth.filters.BasicAuthOnlyOnEndpointFilter;
+import hu.elte.fullstack.fullstack_programming_backend.auth.filters.BasicToJwtAuthenticationFilter;
+import hu.elte.fullstack.fullstack_programming_backend.auth.filters.JwtPreAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,17 +23,25 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 @Configuration
 public class DefaultSecurityConfig {
 
+    public static final String LOGIN_ENDPOINT = "/login";
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService) throws Exception {
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.debug(false);
+    }
+
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService) {
         http
-                .authorizeHttpRequests((authorize) -> authorize
+                .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/public").permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(withDefaults())
                 .addFilterBefore(new JwtPreAuthFilter(jwtService), BasicAuthenticationFilter.class)
+                .addFilterBefore(new BasicAuthOnlyOnEndpointFilter(LOGIN_ENDPOINT), BasicAuthenticationFilter.class)
                 .addFilterAfter(new BasicToJwtAuthenticationFilter(jwtService), BasicAuthenticationFilter.class);
         return http.build();
     }

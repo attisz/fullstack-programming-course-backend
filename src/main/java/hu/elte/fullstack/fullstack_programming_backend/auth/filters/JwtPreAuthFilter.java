@@ -1,8 +1,9 @@
-package hu.elte.fullstack.fullstack_programming_backend.auth;
+package hu.elte.fullstack.fullstack_programming_backend.auth.filters;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import hu.elte.fullstack.fullstack_programming_backend.auth.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
